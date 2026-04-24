@@ -1,0 +1,16 @@
+# Local MongoDB for Giulia (development)
+# Usage: `docker compose up -d` from this directory. First published: 24-04-2026
+services:
+  mongodb:
+    image: mongo:7
+    container_name: giulia-mongo
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - giulia_mongo_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: giulia
+
+volumes:
+  giulia_mongo_data:
