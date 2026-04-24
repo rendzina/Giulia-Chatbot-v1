@@ -34,6 +34,27 @@ cp .env.example .env
 
 ## Run order (every session)
 
+The first two steps in the flowchart are **one-time** (environment and secrets). All later
+runs: start from **add or change PDFs** (only if needed), then **MongoDB** →
+**`ProcessFiles.py`** → **Chainlit**.
+
+```mermaid
+flowchart TD
+  firstVenv[Create venv, pip install from requirements]
+  firstEnv[Copy .env.example to .env, set MISTRAL_API_KEY]
+  addPdfs[Add or update PDFs in SourceDocuments]
+  dockerMongo[Start MongoDB: docker compose up -d in mongodb_docker]
+  ingest[Run: python ProcessFiles.py]
+  ui[Run: chainlit run app.py]
+  openBrowser["Open the URL in your browser, e.g. 127.0.0.1:8000"]
+  firstVenv --> firstEnv
+  firstEnv --> addPdfs
+  addPdfs --> dockerMongo
+  dockerMongo --> ingest
+  ingest --> ui
+  ui --> openBrowser
+```
+
 1. **Start MongoDB** (one terminal):
 
    ```bash
