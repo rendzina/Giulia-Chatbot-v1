@@ -4,8 +4,7 @@
 
 Giulia is a prototype **R**etrieval-**A**ugmented-**G**eneration chatbot.
 Source files from `SourceDocuments/` are chunked and stored in MongoDB, vectors
-are indexed in FAISS, and responses are generated through the Mistral API with
-source references.
+are indexed in FAISS, and responses are generated through the Mistral API with source references.
 
 **SPDX-Licence-Identifier:** [CC-BY-4.0](LICENSE) (Attribution 4.0 International).
 
@@ -19,7 +18,9 @@ source references.
 
 Professor Stephen Hallett, Cranfield University, 2026.
 
-## One-time setup
+## Initial one-time setup
+
+Run the stages below once only.
 
 ```bash
 cd "…/Giulia Chatbot v1"
@@ -33,7 +34,10 @@ cp .env.example .env
 ## Run order (every session)
 
 The first two boxes in this flow are one-time actions. Later sessions usually
-start at “Add or update source files”.
+start at “Add or update source files”. A dotted link marks an **optional** branch:
+pre-process image-only PDFs with OCR (then place the resulting files in
+`SourceDocuments/`) **before** running `ProcessFiles.py` — see
+[OCR_PDF_PreProcessingWorkflow.md](OCR_PDF_PreProcessingWorkflow.md).
 
 ```mermaid
 flowchart TD
@@ -42,12 +46,15 @@ flowchart TD
   addFiles[Add or update files in SourceDocuments]
   startMongo[Start MongoDB with docker compose]
   ingest[Run python ProcessFiles.py]
+  ocrPdf[Pre-process PDFs with OCR if needed]
   runUi[Run chainlit run app.py]
   openUi["Open the browser URL, e.g. 127.0.0.1:8000"]
   firstVenv --> firstEnv
   firstEnv --> addFiles
   addFiles --> startMongo
   startMongo --> ingest
+  addFiles -.->|PDF scans lack text| ocrPdf
+  ocrPdf -.->|finish before ingest| ingest
   ingest --> runUi
   runUi --> openUi
 ```
@@ -91,7 +98,7 @@ flowchart TD
 
 ## Preview mode (`--dry-run`)
 
-Review changes before embedding or writing anything:
+Review changes before embedding or writing anything and reports to the terminal:
 
 ```bash
 python ProcessFiles.py --dry-run
@@ -102,7 +109,7 @@ does not write MongoDB, does not update the manifest, and does not rebuild FAISS
 
 ## OCR pre-processing for scanned PDFs
 
-If PDFs are image-heavy (no selectable text), run OCR first and only move
+If PDFs are image-heavy (no selectable text, but images contain text), run OCR first and only move
 approved OCR outputs into `SourceDocuments/`.
 
 See [OCR_PDF_PreProcessingWorkflow.md](OCR_PDF_PreProcessingWorkflow.md) for the
@@ -111,9 +118,8 @@ full incoming → OCR output → promotion workflow.
 ## Smoke test
 
 1. Place one test file (`.pdf`, `.docx`, or `.txt`) in `SourceDocuments/`.
-2. Run `python ProcessFiles.py` and confirm ingest output on stderr.
-3. Run the same command again without changing files; confirm the “no changed
-   source files” message.
+2. Run `python ProcessFiles.py` and confirm ingest output on stderr. ProcessFiles.py can be run multiple times - it handles changes made to the source files (additions, edits, removals).
+3. Run the same command again without changing files; confirm the “no changed source files” message.
 4. Start Chainlit and ask a question whose answer is in that file.
 
 ## Project layout
@@ -131,10 +137,9 @@ full incoming → OCR output → promotion workflow.
 
 ## Notes
 
-- Giulia uses Mistral for both embeddings and chat.
-- Answers include source references with location ranges (pages, lines, or
-  paragraphs).
-- Scanned PDFs need OCR before ingestion.
+- Giulia uses the Mistral AI for both embeddings and chat.
+- Answers include source references with location ranges (pages, lines, or paragraphs).
+- Scanned PDFs (may) need OCR before ingestion. Optional OCR tools are included in this repo.
 
 ---
 
