@@ -2,25 +2,22 @@
 
 ## A deliverable of the SOILL-Stepup project
 
-A prototype **R**etrieval-**A**ugmented-**G**eneration chatbot: source files in
-`SourceDocuments/`, text chunks in **MongoDB** (local Docker), vectors in
-**FAISS**, and answers + sources via the **Mistral API** (the same model family
-as the Le Chat product, accessible programmatically from [La
-Plateforme](https://console.mistral.ai/)).
+Giulia is a prototype **R**etrieval-**A**ugmented-**G**eneration chatbot.
+Source files from `SourceDocuments/` are chunked and stored in MongoDB, vectors
+are indexed in FAISS, and responses are generated through the Mistral API with
+source references.
 
-**SPDX-Licence-Identifier:** [CC-BY-4.0](LICENSE) (Attribution 4.0
-International; see `LICENSE`).
+**SPDX-Licence-Identifier:** [CC-BY-4.0](LICENSE) (Attribution 4.0 International).
 
 ## Prerequisites
 
 - Python 3.9+ (3.10+ recommended)
-- Docker, for the local MongoDB container
+- Docker (for the local MongoDB service)
 - A Mistral API key
 
 ## Credits
 
-Professor Stephen Hallett, Cranfield University, 2026
-
+Professor Stephen Hallett, Cranfield University, 2026.
 
 ## One-time setup
 
@@ -35,104 +32,110 @@ cp .env.example .env
 
 ## Run order (every session)
 
-The first two steps in the flowchart are **one-time** (environment and secrets). All later
-runs: start from **add or change source files** (only if needed), then **MongoDB** →
-**`ProcessFiles.py`** → **Chainlit**.
+The first two boxes in this flow are one-time actions. Later sessions usually
+start at “Add or update source files”.
 
 ```mermaid
 flowchart TD
-  firstVenv[Create venv, pip install from requirements]
-  firstEnv[Copy .env.example to .env, set MISTRAL_API_KEY]
-  addPdfs[Add or update source files in SourceDocuments]
-  dockerMongo[Start MongoDB: docker compose up -d in mongodb_docker]
-  ingest[Run: python ProcessFiles.py]
-  ui[Run: chainlit run app.py]
-  openBrowser["Open the URL in your browser, e.g. 127.0.0.1:8000"]
+  firstVenv[Create venv and install dependencies]
+  firstEnv[Copy .env.example to .env and set MISTRAL_API_KEY]
+  addFiles[Add or update files in SourceDocuments]
+  startMongo[Start MongoDB with docker compose]
+  ingest[Run python ProcessFiles.py]
+  runUi[Run chainlit run app.py]
+  openUi["Open the browser URL, e.g. 127.0.0.1:8000"]
   firstVenv --> firstEnv
-  firstEnv --> addPdfs
-  addPdfs --> dockerMongo
-  dockerMongo --> ingest
-  ingest --> ui
-  ui --> openBrowser
+  firstEnv --> addFiles
+  addFiles --> startMongo
+  startMongo --> ingest
+  ingest --> runUi
+  runUi --> openUi
 ```
 
-1. **Start MongoDB** (one terminal):
+1. **Start MongoDB**:
 
    ```bash
    cd mongodb_docker
    docker compose up -d
    ```
 
-2. **Ingest or update source files** (`.pdf`, `.docx`, `.txt`) after you add or change files under
-   `SourceDocuments/`):
+2. **Ingest or update source files** (`.pdf`, `.docx`, `.txt`) from
+   `SourceDocuments/`:
 
    ```bash
    source .venv/bin/activate
    python ProcessFiles.py
    ```
 
-   - First run, or when files are added/changed/removed, the script re-embeds
-     only what is **new** or **changed** (per-file SHA-256), removes chunks for
-     **deleted** source files, and rebuilds the FAISS index from the stored embeddings.
-   - No API call for **unchanged** files.
+   - New/changed files are re-embedded.
+   - Removed files have their chunks deleted.
+   - Unchanged files are skipped.
+   - FAISS is rebuilt only when there are content changes.
 
-3. **Start the chat UI**:
+3. **Start the Chainlit app**:
 
    ```bash
    source .venv/bin/activate
    chainlit run app.py
    ```
 
-   Open the URL shown in the terminal (usually `http://127.0.0.1:8000`).
-
 ## Environment variables (`.env`)
 
 | Variable | Description |
 |----------|-------------|
 | `MISTRAL_API_KEY` | Required for ingestion and chat. |
-| `MONGODB_URI` | Default: `mongodb://127.0.0.1:27017/giulia` (must include database name). |
-| `MISTRAL_EMBED_MODEL` | Default: `mistral-embed`. |
-| `MISTRAL_CHAT_MODEL` | e.g. `mistral-small-latest` or `mistral-large-latest`. |
-| `RAG_TOP_K` | Number of chunks to retrieve (default: `8`). |
+| `MONGODB_URI` | Default: `mongodb://127.0.0.1:27017/giulia` (must include the database name). |
+| `MISTRAL_EMBED_MODEL` | Embedding model, default `mistral-embed`. |
+| `MISTRAL_CHAT_MODEL` | Chat model, e.g. `mistral-small-latest`. |
+| `RAG_TOP_K` | Number of chunks retrieved per question (default `8`). |
 
-## `ProcessFiles.py` without applying changes
+## Preview mode (`--dry-run`)
 
-List what would be ingested or removed (no MongoDB or Mistral calls):
+Review changes before embedding or writing anything:
 
 ```bash
 python ProcessFiles.py --dry-run
 ```
 
-## Smoke test (quick)
+Dry-run reports what would be ingested or removed, but does not call Mistral,
+does not write MongoDB, does not update the manifest, and does not rebuild FAISS.
 
-1. Copy a small source file (`.pdf`, `.docx`, or `.txt`) into `SourceDocuments/`.
-2. Start Mongo, run `python ProcessFiles.py` (expect "Ingested" and "FAISS index
-   rebuilt" on stderr).
-3. Run `python ProcessFiles.py` again with **no** changes to the file: expect
-   *No new, changed, or removed source files*.
-4. Start `chainlit run app.py` and ask a question whose answer is only in that
-   document; check the **Sources (retrieved)** list at the end of the reply.
+## OCR pre-processing for scanned PDFs
 
-## Layout
+If PDFs are image-heavy (no selectable text), run OCR first and only move
+approved OCR outputs into `SourceDocuments/`.
+
+See [OCR_PDF_PreProcessingWorkflow.md](OCR_PDF_PreProcessingWorkflow.md) for the
+full incoming → OCR output → promotion workflow.
+
+## Smoke test
+
+1. Place one test file (`.pdf`, `.docx`, or `.txt`) in `SourceDocuments/`.
+2. Run `python ProcessFiles.py` and confirm ingest output on stderr.
+3. Run the same command again without changing files; confirm the “no changed
+   source files” message.
+4. Start Chainlit and ask a question whose answer is in that file.
+
+## Project layout
 
 | Path | Purpose |
 |------|---------|
-| `SourceDocuments/` | Input `.pdf`, `.docx`, and `.txt` files (scanned subfolders are supported) |
-| `data/manifest.json` | Per-file hashes for incremental re-runs (created by the script) |
-| `data/faiss/` | FAISS index and `meta.json` (order of `chunk_id`s) |
-| `ProcessFiles.py` | Ingestion and index rebuild |
-| `app.py` | Chainlit RAG web UI |
-| `giulia/` | Shared code (chunking, PDF text, MongoDB, FAISS, RAG) |
-| `mongodb_docker/` | `docker compose` for local MongoDB |
+| `SourceDocuments/` | Source files for indexing (`.pdf`, `.docx`, `.txt`) |
+| `data/manifest.json` | Per-file hashes used for incremental re-runs |
+| `data/faiss/` | FAISS index and metadata |
+| `ProcessFiles.py` | Ingestion and incremental re-index logic |
+| `app.py` | Chainlit entrypoint |
+| `giulia/` | Shared extraction, chunking, storage, and RAG logic |
+| `mongodb_docker/` | Docker Compose files for local MongoDB |
+| `PDFPreProcessing/` | OCR batch scripts and workflow staging folders |
 
 ## Notes
 
-- The chat uses **Mistral only** (embeddings + chat). No other LLM vendors are
-  called from this app.
-- Giulia answers with a **source list** (file name and location range: pages, lines, or paragraphs) derived from the retrieved chunks.
-- Image-only (scanned) PDFs with no text layer are not read without OCR; that
-  is out of scope for this prototype.
+- Giulia uses Mistral for both embeddings and chat.
+- Answers include source references with location ranges (pages, lines, or
+  paragraphs).
+- Scanned PDFs need OCR before ingestion.
 
 ---
 
-Last updated: 24-04-2026 (UK style).
+Last updated: 25-04-2026 (UK style).

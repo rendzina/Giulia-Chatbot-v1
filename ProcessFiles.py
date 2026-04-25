@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """
+ProcessFiles.py
+
 Scan `SourceDocuments/` for supported files (.pdf, .docx, .txt), chunk and
 embed with Mistral, store in MongoDB, then rebuild the local FAISS index.
 Re-run safely: only new or changed files are re-embedded; removed files are
 dropped; unchanged files are skipped.
+
+**Created:** 25-04-2026 (UK style).  
+**Credits:** Professor Stephen Hallett, Cranfield University, 2026.
 """
 
 from __future__ import annotations
@@ -130,6 +135,7 @@ def main() -> int:
         key = _rel_key(cfg.SOURCE_DOCUMENTS, p)
         current[key] = _sha256_file(p)
 
+    # Files whose content hash differs from the last successful run.
     to_refresh: list[Path] = [
         p
         for p in source_files
@@ -137,6 +143,7 @@ def main() -> int:
         != manifest.get(_rel_key(cfg.SOURCE_DOCUMENTS, p))
     ]
 
+    # Paths present before but now missing on disk.
     removed = set(manifest) - set(current)
     if dry:
         for path in sorted(removed):
@@ -173,6 +180,7 @@ def main() -> int:
             k = _rel_key(cfg.SOURCE_DOCUMENTS, p)
             h = current[k]
             if k in manifest:
+                # Replace-on-change: remove old chunks for this path, then ingest fresh chunks.
                 store_mongo.delete_chunks_for_path(k)
             _process_one_file(k, p, h, client)
             store_mongo.upsert_document_record(k, h)

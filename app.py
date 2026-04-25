@@ -1,6 +1,11 @@
 """
+app.py
+
 Giulia: Chainlit RAG web UI. Retrieval from Mongo + FAISS, answers via Mistral chat API only.
 Run: chainlit run app.py
+
+**Created:** 25-04-2026 (UK style).  
+**Credits:** Professor Stephen Hallett, Cranfield University, 2026.
 """
 
 from __future__ import annotations

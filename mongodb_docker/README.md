@@ -26,5 +26,5 @@ docker compose down -v
 
 | Collection  | Role |
 |-------------|------|
-| `chunks`    | Text chunks, provenance, numeric `faiss_id` after a rebuild, and a stored `embedding` (vector for FAISS and rebuilds) |
-| `documents` | One row per **PDF path** and its `file_hash` and `last_processed` time for the incremental ingest |
+| `chunks`    | Text chunks, provenance, numeric `faiss_id`, and stored embeddings used for FAISS rebuilds |
+| `documents` | One row per indexed source path (`.pdf`, `.docx`, `.txt`) with `file_hash` and `last_processed` |
