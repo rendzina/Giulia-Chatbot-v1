@@ -32,5 +32,6 @@ data/*
 .chainlit/*
 !.chainlit/config.toml
 
-# PDFs in corpus (user content — optional: remove if you want to track in git)
-SourceDocuments/*.pdf
+# Input files (PDF/Docx/txt) in corpus (user content — optional: remove if you want to track in git)
+SourceDocuments/*
+PDFPreProcessing/*

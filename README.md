@@ -2,7 +2,7 @@
 
 ## A deliverable of the SOILL-Stepup project
 
-A prototype **R**etrieval-**A**ugmented-**G**eneration chatbot: PDFs in
+A prototype **R**etrieval-**A**ugmented-**G**eneration chatbot: source files in
 `SourceDocuments/`, text chunks in **MongoDB** (local Docker), vectors in
 **FAISS**, and answers + sources via the **Mistral API** (the same model family
 as the Le Chat product, accessible programmatically from [La
@@ -36,14 +36,14 @@ cp .env.example .env
 ## Run order (every session)
 
 The first two steps in the flowchart are **one-time** (environment and secrets). All later
-runs: start from **add or change PDFs** (only if needed), then **MongoDB** →
+runs: start from **add or change source files** (only if needed), then **MongoDB** →
 **`ProcessFiles.py`** → **Chainlit**.
 
 ```mermaid
 flowchart TD
   firstVenv[Create venv, pip install from requirements]
   firstEnv[Copy .env.example to .env, set MISTRAL_API_KEY]
-  addPdfs[Add or update PDFs in SourceDocuments]
+  addPdfs[Add or update source files in SourceDocuments]
   dockerMongo[Start MongoDB: docker compose up -d in mongodb_docker]
   ingest[Run: python ProcessFiles.py]
   ui[Run: chainlit run app.py]
@@ -63,7 +63,7 @@ flowchart TD
    docker compose up -d
    ```
 
-2. **Ingest or update PDFs** (after you add or change files under
+2. **Ingest or update source files** (`.pdf`, `.docx`, `.txt`) after you add or change files under
    `SourceDocuments/`):
 
    ```bash
@@ -73,7 +73,7 @@ flowchart TD
 
    - First run, or when files are added/changed/removed, the script re-embeds
      only what is **new** or **changed** (per-file SHA-256), removes chunks for
-     **deleted** PDFs, and rebuilds the FAISS index from the stored embeddings.
+     **deleted** source files, and rebuilds the FAISS index from the stored embeddings.
    - No API call for **unchanged** files.
 
 3. **Start the chat UI**:
@@ -105,11 +105,11 @@ python ProcessFiles.py --dry-run
 
 ## Smoke test (quick)
 
-1. Copy a small PDF into `SourceDocuments/`.
+1. Copy a small source file (`.pdf`, `.docx`, or `.txt`) into `SourceDocuments/`.
 2. Start Mongo, run `python ProcessFiles.py` (expect "Ingested" and "FAISS index
    rebuilt" on stderr).
-3. Run `python ProcessFiles.py` again with **no** changes to the PDF: expect
-   *No new, changed, or removed PDFs*.
+3. Run `python ProcessFiles.py` again with **no** changes to the file: expect
+   *No new, changed, or removed source files*.
 4. Start `chainlit run app.py` and ask a question whose answer is only in that
    document; check the **Sources (retrieved)** list at the end of the reply.
 
@@ -117,7 +117,7 @@ python ProcessFiles.py --dry-run
 
 | Path | Purpose |
 |------|---------|
-| `SourceDocuments/` | Input PDFs (scanned subfolders are supported) |
+| `SourceDocuments/` | Input `.pdf`, `.docx`, and `.txt` files (scanned subfolders are supported) |
 | `data/manifest.json` | Per-file hashes for incremental re-runs (created by the script) |
 | `data/faiss/` | FAISS index and `meta.json` (order of `chunk_id`s) |
 | `ProcessFiles.py` | Ingestion and index rebuild |
@@ -129,8 +129,7 @@ python ProcessFiles.py --dry-run
 
 - The chat uses **Mistral only** (embeddings + chat). No other LLM vendors are
   called from this app.
-- Giulia answers with a **source list** (file name and page range) derived from
-  the retrieved chunks.
+- Giulia answers with a **source list** (file name and location range: pages, lines, or paragraphs) derived from the retrieved chunks.
 - Image-only (scanned) PDFs with no text layer are not read without OCR; that
   is out of scope for this prototype.
 

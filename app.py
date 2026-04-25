@@ -37,8 +37,9 @@ def _sources_block(result: RAGResult) -> str:
     for s in result.sources:
         name = os.path.basename(s.source_path) if s.source_path else "unknown"
         preview = re.sub(r"\s+", " ", s.preview)
+        label = f"{s.location_type}s {s.location_start}–{s.location_end}"
         lines.append(
-            f"- **[{s.label}]** `{name}` — pages {s.page_start}–{s.page_end}: {preview}\n"
+            f"- **[{s.label}]** `{name}` — {label}: {preview}\n"
         )
     return "".join(lines)
 

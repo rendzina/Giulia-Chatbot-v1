@@ -20,7 +20,7 @@ SYSTEM_RAG = (
     "You are Giulia, a helpful assistant. Answer only using the numbered context "
     "excerpts below. If the answer is not in the context, say you do not have "
     "enough information in the indexed documents. Cite which context numbers you "
-    "use (e.g. [1], [2]) and, when you cite, mention the file name and page range "
+    "use (e.g. [1], [2]) and, when you cite, mention the file name and location "
     "for that excerpt in the same sentence if possible. Use UK English spelling in "
     "your answers."
 )
@@ -31,8 +31,9 @@ class SourceRef:
     label: int
     chunk_id: str
     source_path: str
-    page_start: int
-    page_end: int
+    location_type: str
+    location_start: int
+    location_end: int
     preview: str
 
 
@@ -75,7 +76,9 @@ def retrieve(
         )
     meta = _load_meta()
     if not meta.get("n_vectors", 0):
-        raise FileNotFoundError("The FAISS index is empty. Ingest some PDFs first.")
+        raise FileNotFoundError(
+            "The FAISS index is empty. Ingest some source files first."
+        )
     qv = emb.embed_query(client, question)
     _, ids = store_faiss.search(qv, top_k, index)
     faiss_row = ids[0].tolist() if ids is not None else []
@@ -105,8 +108,9 @@ def retrieve(
     context_lines: list[str] = []
     for n, r in enumerate(rows, start=1):
         sp = r.get("source_path", "unknown")
-        p0 = int(r.get("page_start", 0))
-        p1 = int(r.get("page_end", 0))
+        loc_type = str(r.get("location_type", "page"))
+        p0 = int(r.get("location_start", r.get("page_start", 0)))
+        p1 = int(r.get("location_end", r.get("page_end", 0)))
         text = (r.get("text") or "").strip()
         preview = text[:280] + ("…" if len(text) > 280 else "")
         sources.append(
@@ -114,16 +118,27 @@ def retrieve(
                 label=n,
                 chunk_id=r.get("chunk_id", ""),
                 source_path=sp,
-                page_start=p0,
-                page_end=p1,
+                location_type=loc_type,
+                location_start=p0,
+                location_end=p1,
                 preview=preview,
             )
         )
         base = os.path.basename(sp) if sp else "unknown"
+        label = _format_location_label(loc_type, p0, p1)
         context_lines.append(
-            f"[{n}] (source file: {base}, pages {p0}–{p1}):\n{text}\n"
+            f"[{n}] (source file: {base}, {label}):\n{text}\n"
         )
     return sources, "\n\n".join(context_lines)
+
+
+def _format_location_label(location_type: str, start: int, end: int) -> str:
+    plural = {
+        "page": "pages",
+        "line": "lines",
+        "paragraph": "paragraphs",
+    }.get(location_type, "locations")
+    return f"{plural} {start}–{end}"
 
 
 def answer_question(
@@ -136,7 +151,7 @@ def answer_question(
     if not context_block:
         return RAGResult(
             answer=(
-                "I do not have any indexed documents to search. Add PDFs to "
+                "I do not have any indexed documents to search. Add source files to "
                 "`SourceDocuments/`, then run `python ProcessFiles.py` while MongoDB is running."
             ),
             sources=[],

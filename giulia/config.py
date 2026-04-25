@@ -23,6 +23,7 @@ MISTRAL_API_KEY: str = os.environ.get("MISTRAL_API_KEY", "")
 MISTRAL_EMBED_MODEL: str = os.environ.get("MISTRAL_EMBED_MODEL", "mistral-embed")
 MISTRAL_CHAT_MODEL: str = os.environ.get("MISTRAL_CHAT_MODEL", "mistral-small-latest")
 RAG_TOP_K: int = int(os.environ.get("RAG_TOP_K", "8"))
+SUPPORTED_SOURCE_EXTENSIONS: tuple[str, ...] = (".pdf", ".docx", ".txt")
 
 # Chunking: about 500 words, 20% overlap (100 words) — stride 400
 CHUNK_SIZE_WORDS: int = 500

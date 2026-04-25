@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-Scan `SourceDocuments/` for PDFs, chunk and embed with Mistral, store in MongoDB,
-then rebuild the local FAISS index. Re-run safely: only new or changed files
-are re-embedded; removed files are dropped; unchanged files are skipped.
+Scan `SourceDocuments/` for supported files (.pdf, .docx, .txt), chunk and
+embed with Mistral, store in MongoDB, then rebuild the local FAISS index.
+Re-run safely: only new or changed files are re-embedded; removed files are
+dropped; unchanged files are skipped.
 """
 
 from __future__ import annotations
@@ -19,7 +20,7 @@ from mistralai import Mistral
 from giulia import config as cfg
 from giulia.chunking import TextChunk, chunk_text_with_page_labels
 from giulia import embeddings as emb
-from giulia import pdf_extract
+from giulia import source_extract
 from giulia import store_faiss
 from giulia import store_mongo
 
@@ -55,22 +56,28 @@ def _save_manifest(paths: Dict[str, str]) -> None:
         json.dump(payload, f, indent=2)
 
 
-def _list_pdfs(root: Path) -> list[Path]:
-    return sorted(p for p in root.rglob("*.pdf") if p.is_file())
+def _list_source_files(root: Path) -> list[Path]:
+    files: list[Path] = []
+    for p in root.rglob("*"):
+        if p.is_file() and p.suffix.lower() in cfg.SUPPORTED_SOURCE_EXTENSIONS:
+            files.append(p)
+    return sorted(files)
 
 
 def _rel_key(root: Path, p: Path) -> str:
     return str(p.resolve().relative_to(root.resolve()))
 
 
-def _process_one_pdf(
+def _process_one_file(
     rel_path: str, abs_path: Path, file_hash: str, client: Mistral
 ) -> int:
-    """Re-chunk and insert chunks for a single (new or changed) file."""
-    pages = pdf_extract.extract_pages(abs_path)
-    words, word_pages = pdf_extract.words_with_pages(pages)
+    """Re-chunk and insert chunks for a single (new or changed) source file."""
+    extracted = source_extract.extract_source_words(abs_path)
     cks: list[TextChunk] = chunk_text_with_page_labels(
-        words, word_pages, rel_path, file_hash
+        extracted.words,
+        extracted.locations,
+        rel_path,
+        file_hash,
     )
     if not cks:
         print(f"  No text extracted, skipping: {rel_path}", file=sys.stderr)
@@ -89,6 +96,10 @@ def _process_one_pdf(
                 "text": ch.text,
                 "page_start": ch.page_start,
                 "page_end": ch.page_end,
+                "source_type": extracted.source_type,
+                "location_type": extracted.location_type,
+                "location_start": ch.page_start,
+                "location_end": ch.page_end,
                 "embedding": row.tolist(),
                 "created_at": now,
             }
@@ -113,15 +124,15 @@ def main() -> int:
         return 1
     cfg.SOURCE_DOCUMENTS.mkdir(parents=True, exist_ok=True)
     manifest = _load_manifest()
-    pdfs = _list_pdfs(cfg.SOURCE_DOCUMENTS)
+    source_files = _list_source_files(cfg.SOURCE_DOCUMENTS)
     current: dict[str, str] = {}
-    for p in pdfs:
+    for p in source_files:
         key = _rel_key(cfg.SOURCE_DOCUMENTS, p)
         current[key] = _sha256_file(p)
 
     to_refresh: list[Path] = [
         p
-        for p in pdfs
+        for p in source_files
         if current[_rel_key(cfg.SOURCE_DOCUMENTS, p)]
         != manifest.get(_rel_key(cfg.SOURCE_DOCUMENTS, p))
     ]
@@ -163,7 +174,7 @@ def main() -> int:
             h = current[k]
             if k in manifest:
                 store_mongo.delete_chunks_for_path(k)
-            _process_one_pdf(k, p, h, client)
+            _process_one_file(k, p, h, client)
             store_mongo.upsert_document_record(k, h)
 
     new_manifest = {k: current[k] for k in current}
@@ -173,7 +184,10 @@ def main() -> int:
         n_vec = store_faiss.rebuild_faiss_from_mongo()
         print(f"FAISS index rebuilt: {n_vec} vector(s).", file=sys.stderr)
     else:
-        print("No new, changed, or removed PDFs. Manifest is up to date.", file=sys.stderr)
+        print(
+            "No new, changed, or removed source files. Manifest is up to date.",
+            file=sys.stderr,
+        )
         if not cfg.FAISS_INDEX_PATH.is_file():
             cl = list(store_mongo.chunks_col().find({}, {"_id": 1}).limit(1))
             if cl:
