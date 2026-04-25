@@ -28,8 +28,9 @@ data/*
 *.swp
 .DS_Store
 
-# Chainlit (local dev generates translations and local config; remove if you want to version config)
-.chainlit/
+# Chainlit: ignore generated files but keep a versioned UI config
+.chainlit/*
+!.chainlit/config.toml
 
 # PDFs in corpus (user content — optional: remove if you want to track in git)
 SourceDocuments/*.pdf

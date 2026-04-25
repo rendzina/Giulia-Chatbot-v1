@@ -18,8 +18,8 @@ from giulia.rag import RAGResult, answer_question
 async def on_chat_start() -> None:
     await cl.Message(
         content=(
-            "I am **Giulia** (v1). I answer from the documents you indexed with "
-            "`ProcessFiles.py`, with source references from the context I retrieve."
+            "I am **Giulia** (v1). I can help you find the information you need relating to the EU Mission Soil Living Labs and Lighthouses, from start to scale. "
+            "Please ask me a question and I will do my best to help you find the information you need."
         )
     ).send()
     if not cfg.MISTRAL_API_KEY:

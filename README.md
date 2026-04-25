@@ -19,7 +19,8 @@ International; see `LICENSE`).
 
 ## Credits
 
-Professor Stephen Hallett, Cranfield University
+Professor Stephen Hallett, Cranfield University, 2026
+
 
 ## One-time setup
 

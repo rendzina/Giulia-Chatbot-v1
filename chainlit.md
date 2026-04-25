@@ -1,14 +1,19 @@
-# Welcome to Chainlit! 🚀🤖
+# Welcome to Giulia! 🇪🇺
 
-Hi there, Developer! 👋 We're excited to have you on board. Chainlit is a powerful tool designed to help you prototype, debug and share applications built on top of LLMs.
+![SOILL and Giulia wordmark](/public/logo_dark.png)
+
+Giulia is the chatbot for the SOILL project, providing structured support for EU Mission Soil Living Labs, 
+from start to scale. Get help across the full journey — coordination, training, knowledge sharing, monitoring, and a digital hub — for existing, emerging, and future Soil Living Labs and Lighthouses across Europe.
 
 ## Useful Links 🔗
 
-- **Documentation:** Get started with our comprehensive [Chainlit Documentation](https://docs.chainlit.io) 📚
-- **Discord Community:** Join our friendly [Chainlit Discord](https://discord.gg/k73SQ3FyUh) to ask questions, share your projects, and connect with other developers! 💬
+- **Web:** Get started with our comprehensive [SOILL Website](https://www.soill2030.eu) 📚
+- **Hub:** Access the [SOILL Hub](https://soill2030.app/) to ask questions, join initiatives and learn more, and connect with other living labs! 💬
 
-We can't wait to see what you create with Chainlit! Happy coding! 💻😊
+We hope you find the chatbot a helpful resource.
 
-## Welcome screen
+## Welcome
 
-To modify the welcome screen, edit the `chainlit.md` file at the root of your project. If you do not want a welcome screen, just leave this file empty.
+The chatbot will guide you through the landscape of Living Labs and Lighthouses. Type in your question to receive contextual answers with references for additional reading.
+
+Giulia uses [Mistral AI](https://mistral.ai/) to help you find your answers.
