@@ -3,8 +3,7 @@
 ## A deliverable of the SOILL-Stepup project
 
 Giulia is a prototype **R**etrieval-**A**ugmented-**G**eneration chatbot.
-Source files from `SourceDocuments/` are chunked and stored in MongoDB, vectors
-are indexed in FAISS, and responses are generated through the Mistral API with source references.
+Source files from `SourceDocuments/` are chunked and stored in MongoDB. Vectors from the text are indexed in FAISS, and responses are generated through the Mistral API with source references.
 
 **SPDX-Licence-Identifier:** [CC-BY-4.0](LICENSE) (Attribution 4.0 International).
 

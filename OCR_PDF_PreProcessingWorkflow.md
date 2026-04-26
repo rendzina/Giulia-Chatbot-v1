@@ -1,7 +1,6 @@
 # OCR PDF pre-processing workflow (batch)
 
-Some PDFs are image-heavy and contain little or no extractable text. In that
-case, run OCR before ingestion so `ProcessFiles.py` can chunk meaningful text.
+Some PDFs are image-heavy and contain little or no direct extractable text, However they have text in images in the file. In that case, run OCR before ingestion so `ProcessFiles.py` can chunk meaningful text. By default if a given page already has (OCR) text on it, it is not processed by this tool - see command line switches.
 
 **Created:** 25-04-2026 (UK style).  
 **Credits:** Professor Stephen Hallett, Cranfield University, 2026.
