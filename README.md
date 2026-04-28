@@ -54,7 +54,7 @@ flowchart TD
   addFiles --> startMongo
   startMongo --> ingest
   addFiles -.->|PDF scans lack text| ocrPdf
-  ocrPdf -.->|finish before ingest| ingest
+  ocrPdf -.->|finish before ingest| startMongo
   ingest --> runUi
   runUi --> openUi
 ```
