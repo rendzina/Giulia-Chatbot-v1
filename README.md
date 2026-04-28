@@ -53,8 +53,8 @@ flowchart TD
   firstEnv --> addFiles
   addFiles --> startMongo
   startMongo --> ingest
-  addFiles -.->|PDF scans lack text| startMongo
-  startMongo -.->|finish before ingest| ingest
+  addFiles -.->|PDF scans lack text| ocrPdf
+  ocrPdf -.->|finish before ingest| ingest
   ingest --> runUi
   runUi --> openUi
 ```
