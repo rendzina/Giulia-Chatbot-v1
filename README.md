@@ -40,10 +40,11 @@ pre-process image-only PDFs with OCR (then place the resulting files in
 
 ```mermaid
 flowchart TD
-  firstVenv[Create venv and install dependencies]
+  firstVenv[Create venv and install dependencies from requirements]
   firstEnv[Copy .env.example to .env and set MISTRAL_API_KEY]
   addFiles[Add or update files in SourceDocuments]
   startMongo[Start MongoDB with docker compose]
+  
   ingest[Run python ProcessFiles.py]
   ocrPdf[Pre-process PDFs with OCR if needed]
   runUi[Run chainlit run app.py]
@@ -52,8 +53,8 @@ flowchart TD
   firstEnv --> addFiles
   addFiles --> startMongo
   startMongo --> ingest
-  addFiles -.->|PDF scans lack text| ocrPdf
-  ocrPdf -.->|finish before ingest| ingest
+  addFiles -.->|PDF scans lack text| startMongo
+  startMongo -.->|finish before ingest| ingest
   ingest --> runUi
   runUi --> openUi
 ```
